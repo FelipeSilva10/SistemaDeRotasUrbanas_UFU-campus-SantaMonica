@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "grafo.h"
+#include <limits.h>
 
 Grafo *criaGrafo(int numeroLocalidades){
     Grafo* grafo;
@@ -126,46 +127,94 @@ int insereRua(Grafo *grafo, int origem, int destino, int distancia){
     return encontrado;}}
 
 
-void dijkstra(Grafo* grafo, int origem, int destino){
-
+void dijkstra(Grafo* grafo, int origem, int destino) {
     int n = grafo->numeroLocalidades;
+    int i;
 
-    int visited[n] = {};
-    int dist[n] = {};
-    int prev[n] = {};
+    // 1. Alocação correta e segura (Padrão do Professor)
+    int *visited = (int*) malloc(n * sizeof(int));
+    int *dist = (int*) malloc(n * sizeof(int));
+    int *prev = (int*) malloc(n * sizeof(int));
 
-    for(int i=0;i<n;i++) dist[i] = 9999999, prev[i] = -1;
-
-    rua* cur = grafo->listaAdj[origem];
+    // Inicializa tudo com -1 (Infinito), conforme as notas de aula
+    for(i = 0; i < n; i++) {
+        dist[i] = -1; 
+        prev[i] = -1;
+        visited[i] = 0;
+    }
 
     dist[origem] = 0;
+    int cont = n;
 
-    for(int i=0;i<n;i++){
-
+    while (cont > 0) {
+        // Lógica da função procuraMenorDistancia do professor
         int u = -1;
-
-        for(int j=0;j<n;j++){
-            if(!visited[j] && (u == -1 || dist[j] < dist[i])) u = j;
+        int primeiro = 1;
+        for (int j = 0; j < n; j++) {
+            if (dist[j] >= 0 && visited[j] == 0) {
+                if (primeiro) {
+                    u = j;
+                    primeiro = 0;
+                } else if (dist[u] > dist[j]) {
+                    u = j;
+                }
+            }
         }
 
-        if(dist[u] == 9999999) break;
+        if (u == -1) break; // Não há mais caminhos alcançáveis
 
         visited[u] = 1;
+        cont--;
 
+        // ADAPTAÇÃO: Percorrer a Lista Encadeada em vez da Matriz/Vetor
         rua* r = grafo->listaAdj[u];
 
-
-        while(r != NULL){
+        while (r != NULL) {
             int v = r->destino;
+            int peso = r->distancia;
 
-            if(dist[u] + r->distancia < dist[v]){
-                dist[v] = dist[u] + r->distancia;
+            // Lógica de relaxamento do professor usando < 0 como infinito
+            if (dist[v] < 0) {
+                dist[v] = dist[u] + peso;
                 prev[v] = u;
+            } else {
+                if (dist[v] > dist[u] + peso) {
+                    dist[v] = dist[u] + peso;
+                    prev[v] = u;
+                }
             }
-
             r = r->proxima;
         }
     }
+
+    // Exibir Resultado
+    if (dist[destino] < 0) {
+        printf("Nao ha caminho possivel entre %d e %d\n", origem, destino);
+    } else {
+        printf("Distancia minima: %d metros\n", dist[destino]);
+        printf("Caminho (ID): ");
+        
+        int *caminho = (int*) malloc(n * sizeof(int));
+        int tam = 0;
+
+        for (int v = destino; prev[v] != -1; v = prev[v]) {
+            caminho[tam++] = v;
+        }
+        caminho[tam++] = origem; // Inclui a origem
+
+        for (int j = tam - 1; j >= 0; j--) {
+            printf("%d ", caminho[j]);
+        }
+        printf("\n");
+        
+        free(caminho);
+    }
+
+    // Libera a memória alocada
+    free(visited);
+    free(dist);
+    free(prev);
+}
 
     printf("Distancia minima: %d\n", dist[destino]);
     printf("Caminho (ID): ");

@@ -3,7 +3,6 @@
 #include <abb.h>
 #include <grafo.h>
 #include <string.h>
-#include <direct.h>
 
 void printmenu(){
 
